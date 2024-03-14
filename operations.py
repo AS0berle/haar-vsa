@@ -7,12 +7,15 @@ import time
 from functools import cache
 
 
-def get_rand_unit_vec(dim:int, translation:int = 0):
+def get_rand_unit_vec(dim:int, translation:int = 0, mean:float = 0, bimodal:bool = False):
     """ Get unit vectors randomly sampled from the unit sphere
 
         Optionally, translate them by a fixed amount in all dimensions.
     """
-    s = np.random.normal(0, 1, dim)
+
+    s = np.random.normal(mean, 1/(dim**.5), dim)
+    if bimodal:
+        s = s * np.random.choice([-1, 1], dim)
     return translation + (s / np.linalg.norm(s))
 
 
@@ -64,10 +67,13 @@ def inverse_vec(H: np.ndarray, x: np.ndarray):
     return H.T @ inv
 
 
-def bind(H:np.ndarray, x: np.ndarray, y: np.ndarray):
+def bind(H:np.ndarray, x: np.ndarray, y: np.ndarray, squish:float=0.0):
     Hx = H @ x
     Hy = H @ y
-    return H.T @ (Hx * Hy)
+    pairwise = Hx * Hy
+    if squish != 0:
+        pairwise[np.abs(pairwise) < squish] = 0
+    return H.T @ pairwise
 
 
 def unbind(H:np.ndarray, x: np.ndarray, B: np.ndarray):
